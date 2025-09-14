@@ -1,8 +1,10 @@
+#define UDP_TX_PACKET_MAX_SIZE 8192
+
 char buf[UDP_TX_PACKET_MAX_SIZE + 1];
 void parsing() {
   if (Udp.parsePacket()) {
     int n = Udp.read(buf, UDP_TX_PACKET_MAX_SIZE);
-    buf[n] = NULL;
+    buf[n] = 0; // Используем 0 или '\0' вместо NULL для терминирующего нуля
 
     // ПРЕ-ПАРСИНГ (для данных АЦП)
     if (buf[0] != 'G' || buf[1] != 'L' || buf[2] != ',') return;  // защита от не наших данных
@@ -87,8 +89,8 @@ void parsing() {
               DEBUG("Update to ");
               DEBUGLN(OTA);
               delay(100);
-              WiFiClient client;
-              ESPhttpUpdate.update(client, OTA);
+              // ИСПРАВЛЕНИЕ: Передаем только URL. Библиотека сама создаст WiFiClient.
+              ESPhttpUpdate.update(OTA);
             } break;
           case 13:                                        // выключить через
             if (data[3] == 0) turnoffTmr.stop();
@@ -103,7 +105,7 @@ void parsing() {
         break;
 
       case 1: DEBUGLN("Config"); blinkTmr.restart();
-        FOR_i(0, CFG_SIZE) {
+        for(int i = 0; i < CFG_SIZE; i++) {
           *((byte*)&cfg + i) = data[i + 2];   // загоняем в структуру
         }
         setTime(data[CFG_SIZE + 10 + 2], data[CFG_SIZE + 10 + 3], data[CFG_SIZE + 10 + 4], data[CFG_SIZE + 10 + 5]);
@@ -123,8 +125,8 @@ void parsing() {
       case 2: DEBUGLN("Preset");
         {
           cfg.presetAmount = data[2];   // кол-во режимов
-          FOR_j(0, cfg.presetAmount) {
-            FOR_i(0, PRES_SIZE) {
+          for(int j = 0; j < cfg.presetAmount; j++) {
+            for(int i = 0; i < PRES_SIZE; i++) {
               *((byte*)&preset + j * PRES_SIZE + i) = data[j * PRES_SIZE + i + 3]; // загоняем в структуру
             }
           }
@@ -141,7 +143,7 @@ void parsing() {
         break;
 
       case 3: DEBUGLN("Dawn"); blinkTmr.restart();
-        FOR_i(0, DAWN_SIZE) {
+        for(int i = 0; i < DAWN_SIZE; i++) {
           *((byte*)&dawn + i) = data[i + 2]; // загоняем в структуру
         }
         setTime(data[DAWN_SIZE + 2], data[DAWN_SIZE + 3], data[DAWN_SIZE + 4], data[DAWN_SIZE + 5]);
@@ -160,7 +162,7 @@ void parsing() {
         break;
 
       case 5: DEBUGLN("Palette"); blinkTmr.restart();
-        FOR_i(0, PAL_SIZE) {
+        for(int i = 0; i < PAL_SIZE; i++) {
           *((byte*)&pal + i) = data[i + 2]; // загоняем в структуру
         }
         setTime(data[PAL_SIZE + 2], data[PAL_SIZE + 3], data[PAL_SIZE + 4], data[PAL_SIZE + 5]);
@@ -185,15 +187,18 @@ void parsing() {
 
 void sendToSlaves(byte data1, byte data2) {
   if (cfg.role == GL_MASTER) {
-    char reply[15];
+    char reply[20]; // Немного увеличил буфер
     mString packet(reply);
     packet.clear();
-    packet = packet + "GL,4," + data1 + ',' + data2;
+    packet += "GL,4,";
+    packet += (int32_t)data1;
+    packet += ',';
+    packet += (int32_t)data2;
 
     DEBUG("Sending to Slaves: ");
     DEBUGLN(reply);
 
-    FOR_i(0, 4) {
+    for(int i = 0; i < 4; i++) {
       sendUDP(reply);
       delay(8);
     }

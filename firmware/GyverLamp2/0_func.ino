@@ -1,15 +1,27 @@
 void sendUDP(char *data) {
   Udp.beginPacket(broadIP, portNum + cfg.group);
-  Udp.write(data);
+  // ИСПРАВЛЕНИЕ 1: Используем Udp.write с указанием размера буфера
+  Udp.write((uint8_t*)data, strlen(data));
   Udp.endPacket();
 }
+
 void sendUDP(byte cmd, int data1 = 0, int data2 = 0, int data3 = 0) {
-  char reply[20] = "";
+  char reply[40] = ""; // Увеличил размер буфера на всякий случай
   mString packet(reply);
-  packet = packet + "GL," + cmd + ',' + data1 + ',' + data2 + ',' + data3;
+
+  // ИСПРАВЛЕНИЕ 3: Явно приводим тип int к int32_t для разрешения неоднозначности
+  packet += "GL,";
+  packet += cmd;
+  packet += ",";
+  packet += (int32_t)data1;
+  packet += ",";
+  packet += (int32_t)data2;
+  packet += ",";
+  packet += (int32_t)data3;
+
   sendUDP(reply);
   //DEBUG("Sending: ");
-  //DEBUGLN(cmd);
+  //DEBUGLN(reply); // Лучше выводить reply, чтобы видеть собранную строку
 }
 void iAmOnline() {
   if (onlineTmr.isReady()) {

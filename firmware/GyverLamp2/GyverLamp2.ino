@@ -100,10 +100,12 @@ const char WiFiPassword[] = "12345678";
 #include "VolAnalyzer.h"  // анализатор громкости
 #include "FFT_C.h"        // фурье
 #include <FastLED.h>      // лента
-#include <ESP8266WiFi.h>  // базовая либа есп
+// #include <ESP8266WiFi.h>  // базовая либа есп
+#include <WiFi.h>         // базовая либа есп
 #include <WiFiUdp.h>      // общение по UDP
 #include <EEPROM.h>       // епром
-#include "ESP8266httpUpdate.h"  // OTA
+// #include "ESP8266httpUpdate.h"  // OTA
+#include "ESP32httpUpdate.h"  // OTA
 #include "mString.h"      // стринг билдер
 #include "Clap.h"         // обработка хлопков
 
